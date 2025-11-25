@@ -3,132 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Holobox v7.0 Mobile</title>
+    <title>Holobox v7.1 - Center Fixed</title>
     <style>
-        /* --- Reset & Mobile Layout --- */
+        /* --- 核心基礎 --- */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
         body {
             background-color: #050505;
             margin: 0; padding: 0;
-            height: 100dvh; /* 關鍵：解決手機網址列遮擋問題 */
-            width: 100vw;
+            height: 100dvh; width: 100vw;
             overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, sans-serif;
             color: white;
             background: radial-gradient(circle at center, #1a1a1a 0%, #000000 90%);
-            perspective: 1200px; /* 手機距離近，透視感要強一點 */
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            perspective: 1500px; /* 調整透視感 */
         }
 
-        /* --- 變數系統 --- */
         :root {
-            --screen-h: 60dvh; /* 手機版螢幕高度 */
+            --screen-h: 60dvh; 
             --screen-ratio: 0.5625;
-            --case-depth: 220px; /* 手機版薄一點 */
+            --case-depth: 240px;
             --theme-color: #ffaa00;
-            --safe-bottom: env(safe-area-inset-bottom, 20px); /* iPhone 底部安全區 */
         }
 
-        /* 電腦版適配 */
-        @media (min-width: 769px) {
-            :root { --screen-h: 75vh; --case-depth: 300px; }
+        /* 手機版尺寸限制：避免寬度超出螢幕 */
+        @media (max-width: 768px) {
+            :root {
+                /* 讓高度自動適應寬度，確保左右不切邊 */
+                --screen-h: min(60dvh, 130vw); 
+                --case-depth: 200px;
+            }
         }
 
-        /* --- 啟動頁面 (Setup Overlay) --- */
-        #setup-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(5, 5, 5, 0.95); z-index: 999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            backdrop-filter: blur(10px); transition: opacity 0.5s;
-            padding: 20px;
-        }
+        /* --- UI 介面 (保持不變) --- */
+        #error-log { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(220, 20, 60, 0.9); padding: 10px 20px; border-radius: 20px; display: none; z-index: 9999; font-size: 12px; pointer-events: none; }
         
-        .setup-card {
-            width: 100%; max-width: 320px;
-            background: #1a1a1a; padding: 25px; border-radius: 20px;
-            border: 1px solid #333; text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        h1 { margin: 0 0 10px 0; color: var(--theme-color); font-size: 24px; letter-spacing: 1px; }
-        p { color: #888; font-size: 13px; margin-bottom: 25px; line-height: 1.5; }
-
-        /* 大按鈕設計 - 適合手指點擊 */
-        .btn-big {
-            width: 100%; padding: 15px; margin-bottom: 12px;
-            background: #333; border: 1px solid #555; color: white;
-            border-radius: 12px; font-size: 16px; font-weight: 500;
-            cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-        .btn-big:active { transform: scale(0.98); background: #444; }
-        .btn-primary { background: var(--theme-color); color: black; border: none; font-weight: bold; }
-        .btn-primary:disabled { background: #444; color: #777; opacity: 0.5; }
-
-        /* --- 主介面 UI --- */
+        #setup-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 200; display: flex; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(8px); transition: opacity 0.5s; }
+        .setup-box { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 1px solid #333; text-align: center; width: 85%; max-width: 320px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        .btn-big { width: 100%; padding: 14px; margin-top: 12px; background: #333; border: 1px solid #555; color: white; border-radius: 10px; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary { background: var(--theme-color); color: black; border: none; font-weight: bold; margin-top: 25px; }
+        .btn-primary:disabled { background: #444; color: #888; opacity: 0.5; }
         
-        /* 設定按鈕 (右上角) */
-        .gear-btn {
-            position: absolute; top: 20px; right: 20px;
-            width: 44px; height: 44px; border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,255,255,0.2);
-            display: flex; justify-content: center; align-items: center;
-            font-size: 22px; cursor: pointer; z-index: 100;
-        }
+        .gear-btn { position: absolute; top: 20px; right: 20px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); display: flex; justify-content: center; align-items: center; font-size: 22px; cursor: pointer; z-index: 100; }
 
-        /* 底部控制面板 (Bottom Sheet) */
         #controls-panel {
-            position: absolute; bottom: 0; left: 0; width: 100%;
-            background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(15px);
-            border-top-left-radius: 24px; border-top-right-radius: 24px;
-            padding: 20px; padding-bottom: calc(20px + var(--safe-bottom));
-            transform: translateY(110%); /* 預設隱藏 */
-            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-            z-index: 200; border-top: 1px solid rgba(255,255,255,0.1);
-            max-height: 70dvh; overflow-y: auto;
+            position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(15px);
+            border-top-left-radius: 24px; border-top-right-radius: 24px; padding: 20px; padding-bottom: 40px;
+            transform: translateY(110%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 200; max-height: 70dvh; overflow-y: auto;
         }
         #controls-panel.open { transform: translateY(0); }
-
-        /* 面板內容 */
-        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .panel-title { font-size: 16px; font-weight: bold; color: white; }
-        .close-btn { font-size: 24px; color: #888; padding: 5px; }
         
+        /* 電腦版 UI 適配 */
+        @media (min-width: 769px) {
+            #controls-panel { width: 300px; left: auto; right: 20px; bottom: 50%; transform: translateY(50%); border-radius: 16px; max-height: 80vh; }
+            #controls-panel.open { transform: translateY(50%); } /* 電腦版邏輯不同 */
+            .gear-btn { display: none; }
+            #controls-panel { display: block; transform: none; top: 50%; bottom: auto; transform: translateY(-50%); }
+        }
+
         .control-row { margin-bottom: 15px; }
         .label-row { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; margin-bottom: 8px; }
-        
-        /* 滑桿優化 */
-        input[type=range] {
-            width: 100%; height: 6px; border-radius: 3px; background: #333;
-            outline: none; -webkit-appearance: none;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
-            background: var(--theme-color); border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-        }
+        input[type=range] { width: 100%; height: 6px; border-radius: 3px; background: #333; outline: none; -webkit-appearance: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--theme-color); border: 2px solid #fff; }
 
-        /* 攝像頭小視窗 (左上角) */
-        #webcam-wrapper {
-            position: absolute; top: 20px; left: 20px;
-            width: 80px; height: 100px; border-radius: 8px; overflow: hidden;
-            border: 2px solid #333; background: #000; z-index: 90; opacity: 0; pointer-events: none; transition: opacity 0.3s;
-        }
+        #webcam-wrapper { position: absolute; top: 20px; left: 20px; width: 80px; height: 100px; border-radius: 8px; overflow: hidden; border: 2px solid #333; background: #000; z-index: 90; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         #webcam-wrapper.active { opacity: 0.8; pointer-events: auto; }
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 
-        /* --- 3D 機體 CSS 結構 (保留 v3.0 的優秀設計) --- */
+        /* --- 3D 機體 CSS (重點修正：絕對定位) --- */
         .machine-container {
-            position: relative;
+            position: absolute;
+            /* 強制定位在螢幕正中心 */
+            top: 50%;
+            left: 50%;
+            /* 預設 Transform 會在 JS 中被覆蓋，所以這裡只需要設定樣式 */
             transform-style: preserve-3d;
-            transform: rotateY(0deg); 
-            /* 旋轉中心：稍微往後退，讓旋轉軸在機器內部 */
+            /* 修正旋轉軸心：Z軸負值的一半，確保繞著機身中心轉 */
             transform-origin: center center calc(var(--case-depth) * -0.5);
-            transition: transform 0.1s linear; /* 平滑跟隨手指 */
+            /* 初始狀態：加上 translate(-50%, -50%) 修正原點偏移 */
+            transform: translate3d(-50%, -50%, 0) rotateY(0deg);
+            will-change: transform; /* 效能優化 */
         }
 
         .face { position: absolute; backface-visibility: hidden; }
         
-        /* 正面 */
         .face-front {
             width: calc(var(--screen-h) * var(--screen-ratio) + 30px);
             background: linear-gradient(145deg, #eee, #ccc);
@@ -137,28 +94,11 @@
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* 螢幕 */
-        .screen-bezel {
-            width: 100%; height: var(--screen-h);
-            background: #000; border-radius: 4px; padding: 4px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
-            position: relative; overflow: hidden;
-        }
+        .screen-bezel { width: 100%; height: var(--screen-h); background: #000; border-radius: 4px; padding: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); position: relative; overflow: hidden; }
         #hologram-canvas { width: 100%; height: 100%; display: block; }
-        
-        /* 玻璃反光 & Loading */
-        .glass-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.0) 50%);
-            pointer-events: none; z-index: 10;
-        }
-        #loader-text {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: var(--theme-color); font-size: 12px; font-weight: bold; letter-spacing: 1px;
-            z-index: 5;
-        }
+        .glass-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.0) 50%); pointer-events: none; z-index: 10; }
+        #loader-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--theme-color); font-size: 12px; font-weight: bold; letter-spacing: 1px; z-index: 5; text-align: center; width: 100%; }
 
-        /* 側面構造 */
         .side { position: absolute; background: #1a1a1a; border: 1px solid #222; }
         .s-right { width: var(--case-depth); height: 100%; top: 0; right: 0; transform-origin: right; transform: rotateY(-90deg); }
         .s-left { width: var(--case-depth); height: 100%; top: 0; left: 0; transform-origin: left; transform: rotateY(90deg); }
@@ -166,20 +106,12 @@
         .s-bottom { width: 100%; height: var(--case-depth); bottom: 0; left: 0; transform-origin: bottom; transform: rotateX(90deg); }
         .s-back { width: 100%; height: 100%; top: 0; left: 0; transform: translateZ(calc(var(--case-depth) * -1)) rotateY(180deg); background: #111; }
 
-        /* 裝飾 */
         .sensor-bar { position: absolute; top: 12px; width: 100%; display: flex; justify-content: center; gap: 8px; }
         .dot { width: 6px; height: 6px; background: #111; border-radius: 50%; }
         .speaker-mesh { position: absolute; bottom: 10px; width: 60%; height: 12px; background: radial-gradient(#999 1px, transparent 1px); background-size: 3px 3px; opacity: 0.4; }
-
-        /* Debug 提示 */
-        #toast {
-            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 20px;
-            font-size: 12px; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 2000;
-        }
+        #toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 2000; }
     </style>
 
-    <!-- 強制鎖定 Three.js 版本 -->
     <script type="importmap">
     {
         "imports": {
@@ -194,71 +126,57 @@
 </head>
 <body>
 
-    <div id="toast">提示訊息</div>
+    <div id="toast"></div>
 
-    <!-- 啟動畫面 -->
+    <!-- 啟動設定 -->
     <div id="setup-overlay">
-        <div class="setup-card">
-            <h1>HOLOBOX</h1>
-            <p>行動版全息模擬器 v7.0<br>支援 Gyro 陀螺儀視差</p>
+        <div class="setup-box">
+            <h1 style="margin:0 0 10px;">HOLOBOX v7.1</h1>
+            <p style="font-size:12px; color:#aaa;">Mobile Optimized</p>
             
-            <!-- 本地檔案按鈕 -->
             <input type="file" id="file-vrm" accept=".vrm" style="display:none">
-            <button class="btn-big" onclick="document.getElementById('file-vrm').click()">
-                📂 選擇 VRM 模型
-            </button>
-            <div id="vrm-status" style="color:#ffaa00; font-size:12px; margin-bottom:15px; height:15px;"></div>
+            <button class="btn-big" onclick="document.getElementById('file-vrm').click()">📂 選擇 VRM 模型</button>
+            <div id="vrm-status" style="color:#ffaa00; font-size:12px; height:20px; margin-top:5px;"></div>
 
-            <!-- 啟動按鈕 -->
             <button id="btn-start" class="btn-big btn-primary" disabled>請先選擇模型</button>
             
-            <div style="margin-top:20px; font-size:11px; color:#555;">
-                iOS 用戶請在啟動時允許「動作與方向」權限
-            </div>
+            <div style="margin-top:20px; font-size:11px; color:#555;">若 iOS 無法追蹤，請檢查權限</div>
         </div>
     </div>
 
-    <!-- 主介面按鈕 -->
     <div class="gear-btn" onclick="toggleSettings()">⚙️</div>
-    
-    <!-- WebCam 預覽 (預設隱藏) -->
     <div id="webcam-wrapper"><video id="cam-video" autoplay playsinline muted></video></div>
 
-    <!-- 底部設定面板 -->
+    <!-- 底部抽屜面板 -->
     <div id="controls-panel">
         <div class="panel-header">
-            <div class="panel-title">設定與動作</div>
-            <div class="close-btn" onclick="toggleSettings()">✕</div>
+            <div style="font-weight:bold;">設定與動作</div>
+            <div onclick="toggleSettings()" style="padding:10px; cursor:pointer;">✕</div>
         </div>
 
-        <!-- 動作載入 -->
         <div class="control-row">
-            <div class="label-row"><span>Load Animation (.vrma)</span></div>
+            <div class="label-row"><span>加載動作 (.vrma)</span></div>
             <input type="file" id="file-vrma" accept=".vrma" style="display:none">
-            <button class="btn-big" style="padding:10px; font-size:14px; background:#444;" onclick="document.getElementById('file-vrma').click()">➕ 加載動作</button>
-            <div id="anim-status" style="font-size:12px; color:#888; margin-top:5px;"></div>
-        </div>
-
-        <div class="control-row">
-            <button class="btn-big" style="padding:10px; background:#622; border-color:#a44;" onclick="resetPose()">■ 停止動作</button>
+            <button class="btn-big" style="padding:10px; font-size:14px; background:#444;" onclick="document.getElementById('file-vrma').click()">➕ 上傳動作檔</button>
+            <button class="btn-big" style="padding:10px; margin-top:5px; background:#622; border-color:#a44;" onclick="resetPose()">■ 停止動作</button>
         </div>
 
         <hr style="border:0; border-top:1px solid #333; margin:15px 0;">
 
         <div class="control-row">
-            <div class="label-row"><span>追蹤模式 (Tracking)</span></div>
+            <div class="label-row"><span>追蹤模式</span></div>
             <div style="display:flex; gap:10px;">
-                <button class="btn-big" style="flex:1; font-size:12px;" onclick="enableWebcam()">📷 攝像頭</button>
-                <button class="btn-big" style="flex:1; font-size:12px;" onclick="enableGyro()">📱 陀螺儀</button>
+                <button class="btn-big" style="flex:1; padding:10px;" onclick="enableWebcam()">📷 攝像頭</button>
+                <button class="btn-big" style="flex:1; padding:10px;" onclick="enableGyro()">📱 陀螺儀</button>
             </div>
         </div>
 
         <div class="control-row">
-            <div class="label-row"><span>角色位置 Y (Height)</span><span id="lbl-y">-1.2</span></div>
+            <div class="label-row"><span>角色位置 Y</span><span id="lbl-y">-1.2</span></div>
             <input type="range" id="rng-y" min="-2" max="2" step="0.05" value="-1.2">
         </div>
         <div class="control-row">
-            <div class="label-row"><span>角色大小 (Scale)</span><span id="lbl-s">1.0</span></div>
+            <div class="label-row"><span>角色縮放</span><span id="lbl-s">1.0</span></div>
             <input type="range" id="rng-s" min="0.5" max="2.0" step="0.05" value="1.0">
         </div>
     </div>
@@ -270,7 +188,7 @@
             <div class="screen-bezel">
                 <div class="holobox-screen">
                     <div class="glass-layer"></div>
-                    <div id="loader-text">準備就緒</div>
+                    <div id="loader-text">WAITING...</div>
                     <canvas id="hologram-canvas"></canvas>
                 </div>
             </div>
@@ -290,28 +208,19 @@
         import { createVRMAnimationClip, VRMAnimationLoaderPlugin } from '@pixiv/three-vrm-animation';
         import { FilesetResolver, FaceLandmarker } from '@mediapipe/tasks-vision';
 
-        // --- 全域變數 ---
         let scene, camera, renderer, currentVrm, mixer, currentAction;
         let faceLandmarker, video;
         let isGyroEnabled = false;
         let modelUrl = null;
         
-        // 狀態變數
-        const state = {
-            rotY: 0, rotX: 0,
-            modelY: -1.2, modelS: 1.0,
-            camX: 0, camY: 0 // 視差偏移量
-        };
+        const state = { rotY: 0, rotX: 0, modelY: -1.2, modelS: 1.0, camX: 0, camY: 0 };
 
-        // UI 顯示
         function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg; t.style.opacity = 1;
+            const t = document.getElementById('toast'); t.innerText = msg; t.style.opacity = 1;
             setTimeout(() => t.style.opacity = 0, 3000);
         }
         window.toggleSettings = () => document.getElementById('controls-panel').classList.toggle('open');
 
-        // --- 1. 系統初始化 ---
         function initThree() {
             const canvas = document.getElementById('hologram-canvas');
             renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
@@ -320,84 +229,52 @@
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             renderer.shadowMap.enabled = true;
 
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x111111);
-
-            // 廣角鏡頭增加透視感
+            scene = new THREE.Scene(); scene.background = new THREE.Color(0x111111);
             camera = new THREE.PerspectiveCamera(35, canvas.clientWidth / canvas.clientHeight, 0.1, 20.0);
             camera.position.set(0, 0.5, 4.0); 
 
-            // 燈光 - 確保手機上看清楚
-            const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-            scene.add(hemi);
-            const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-            dir.position.set(2, 5, 5);
-            dir.castShadow = true;
-            scene.add(dir);
+            const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2); scene.add(hemi);
+            const dir = new THREE.DirectionalLight(0xffffff, 1.0); dir.position.set(2, 5, 5); dir.castShadow = true; scene.add(dir);
 
-            // 建立簡單的 3D 房間內部
             createRoom();
-            
-            // 開始渲染迴圈
             animate();
         }
 
         function createRoom() {
-            // 簡單的內部盒子，讓視差有感覺
             const roomGeo = new THREE.BoxGeometry(4, 5, 4);
             const roomMat = new THREE.MeshStandardMaterial({ color: 0x222222, side: THREE.BackSide });
-            const room = new THREE.Mesh(roomGeo, roomMat);
-            room.position.y = 0.5;
-            scene.add(room);
-            
-            // 網格地板
-            const grid = new THREE.GridHelper(4, 10, 0x555555, 0x222222);
-            scene.add(grid);
+            const room = new THREE.Mesh(roomGeo, roomMat); room.position.y = 0.5; scene.add(room);
+            const grid = new THREE.GridHelper(4, 10, 0x555555, 0x222222); scene.add(grid);
         }
 
-        // --- 2. VRM 載入 ---
         function loadVRM(url) {
-            const loader = document.getElementById('loader-text');
-            loader.style.display = 'block'; loader.innerText = "載入中...";
+            const loaderText = document.getElementById('loader-text');
+            loaderText.style.display = 'block'; loaderText.innerText = "載入模型中...";
 
             if(currentVrm) { scene.remove(currentVrm.scene); VRMUtils.deepDispose(currentVrm.scene); }
             if(mixer) { mixer.stopAllAction(); mixer = null; }
 
-            const gltfLoader = new GLTFLoader();
-            gltfLoader.register((parser) => new VRMLoaderPlugin(parser));
+            const loader = new GLTFLoader();
+            loader.register((parser) => new VRMLoaderPlugin(parser));
 
-            gltfLoader.load(url, (gltf) => {
+            loader.load(url, (gltf) => {
                 const vrm = gltf.userData.vrm;
-                VRMUtils.rotateVRM0(vrm); // 兼容舊版
+                VRMUtils.rotateVRM0(vrm);
                 currentVrm = vrm;
                 scene.add(vrm.scene);
                 mixer = new THREE.AnimationMixer(currentVrm.scene);
-                
-                // 初始 A-Pose
-                resetPose();
-                updateModelTransform();
-                
-                loader.style.display = 'none';
+                resetPose(); updateModelTransform();
+                loaderText.style.display = 'none';
                 showToast("模型載入成功");
             }, 
-            (progress) => {
-                const p = Math.round((progress.loaded / progress.total) * 100);
-                loader.innerText = `載入中 ${p}%`;
-            }, 
-            (err) => {
-                console.error(err);
-                loader.innerText = "載入失敗";
-                showToast("錯誤: 無法解析模型");
-            });
+            (p) => { loaderText.innerText = `載入中 ${Math.round((p.loaded/p.total)*100)}%`; }, 
+            (e) => { console.error(e); loaderText.innerText = "載入失敗"; showToast("錯誤: 檔案不支援"); });
         }
 
-        // --- 3. 動作載入 (VRMA) ---
         function loadVRMA(url) {
             if(!currentVrm) { showToast("請先載入模型"); return; }
-            
             const loader = new GLTFLoader();
             loader.register((parser) => new VRMAnimationLoaderPlugin(parser));
-            
             loader.load(url, (gltf) => {
                 const vrmAnim = gltf.userData.vrmAnimations?.[0];
                 if(vrmAnim) {
@@ -407,10 +284,9 @@
                         currentAction = mixer.clipAction(clip);
                         currentAction.play();
                         showToast("動作播放中");
-                        document.getElementById('anim-status').innerText = "當前動作: 載入成功";
                     }
                 }
-            }, undefined, (e) => showToast("動作檔錯誤"));
+            }, undefined, () => showToast("動作檔錯誤"));
         }
 
         window.resetPose = () => {
@@ -423,90 +299,51 @@
             }
         };
 
-        // --- 4. 互動控制 (Touch & UI) ---
         function updateModelTransform() {
             if(!currentVrm) return;
             currentVrm.scene.position.y = state.modelY;
             currentVrm.scene.scale.set(state.modelS, state.modelS, state.modelS);
         }
 
-        // UI 綁定
-        document.getElementById('rng-y').addEventListener('input', (e) => {
-            state.modelY = parseFloat(e.target.value);
-            document.getElementById('lbl-y').innerText = state.modelY;
-            updateModelTransform();
-        });
-        document.getElementById('rng-s').addEventListener('input', (e) => {
-            state.modelS = parseFloat(e.target.value);
-            document.getElementById('lbl-s').innerText = state.modelS;
-            updateModelTransform();
-        });
-
-        // 檔案選擇
+        // UI Listeners
+        document.getElementById('rng-y').addEventListener('input', (e) => { state.modelY = parseFloat(e.target.value); document.getElementById('lbl-y').innerText = state.modelY; updateModelTransform(); });
+        document.getElementById('rng-s').addEventListener('input', (e) => { state.modelS = parseFloat(e.target.value); document.getElementById('lbl-s').innerText = state.modelS; updateModelTransform(); });
         document.getElementById('file-vrm').onchange = (e) => {
             const file = e.target.files[0];
-            if(file) {
-                modelUrl = URL.createObjectURL(file);
-                document.getElementById('vrm-status').innerText = file.name;
-                document.getElementById('btn-start').disabled = false;
-                document.getElementById('btn-start').innerText = "啟動全息艙";
-            }
+            if(file) { modelUrl = URL.createObjectURL(file); document.getElementById('vrm-status').innerText = file.name; document.getElementById('btn-start').disabled = false; document.getElementById('btn-start').innerText = "啟動全息艙"; }
         };
-        
-        document.getElementById('file-vrma').onchange = (e) => {
-            const file = e.target.files[0];
-            if(file) loadVRMA(URL.createObjectURL(file));
-        };
+        document.getElementById('file-vrma').onchange = (e) => { const file = e.target.files[0]; if(file) loadVRMA(URL.createObjectURL(file)); };
 
-        // 觸控旋轉 (Rotate Machine)
+        // Touch Rotate Logic
         let touchStart = { x:0, y:0 };
-        document.addEventListener('touchstart', (e) => {
-            if(e.target.closest('#controls-panel')) return;
-            touchStart.x = e.touches[0].clientX;
-            touchStart.y = e.touches[0].clientY;
-        });
+        document.addEventListener('touchstart', (e) => { if(e.target.closest('#controls-panel')) return; touchStart.x = e.touches[0].clientX; touchStart.y = e.touches[0].clientY; });
         document.addEventListener('touchmove', (e) => {
             if(e.target.closest('#controls-panel')) return;
             const deltaX = e.touches[0].clientX - touchStart.x;
             const deltaY = e.touches[0].clientY - touchStart.y;
-            
-            state.rotY += deltaX * 0.5;
-            state.rotX -= deltaY * 0.5;
-            // 限制上下角度
+            state.rotY += deltaX * 0.5; state.rotX -= deltaY * 0.5;
             state.rotX = Math.max(-30, Math.min(30, state.rotX));
-
-            const machine = document.getElementById('machine');
-            machine.style.transform = `rotateY(${state.rotY}deg) rotateX(${state.rotX}deg)`;
-
-            touchStart.x = e.touches[0].clientX;
-            touchStart.y = e.touches[0].clientY;
+            updateMachineTransform();
+            touchStart.x = e.touches[0].clientX; touchStart.y = e.touches[0].clientY;
         });
 
-        // --- 5. 追蹤模式 ---
-        
-        // A. 攝像頭追蹤 (Webcam)
+        function updateMachineTransform() {
+            const machine = document.getElementById('machine');
+            // 關鍵修正：始終保持 translate3d(-50%, -50%, 0) 在最前面
+            machine.style.transform = `translate3d(-50%, -50%, 0) rotateY(${state.rotY}deg) rotateX(${state.rotX}deg)`;
+        }
+
+        // Tracking
         window.enableWebcam = async () => {
             try {
                 showToast("啟動攝像頭...");
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video = document.getElementById('cam-video');
-                video.srcObject = stream;
+                video = document.getElementById('cam-video'); video.srcObject = stream;
                 document.getElementById('webcam-wrapper').classList.add('active');
-                
-                // 載入 MediaPipe
                 const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
-                faceLandmarker = await FaceLandmarker.createFromOptions(vision, { 
-                    baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`, delegate: "GPU" }, 
-                    runningMode: "VIDEO", numFaces: 1 
-                });
-                
-                isGyroEnabled = false;
-                loopTracking();
-                showToast("攝像頭追蹤開啟");
-            } catch(e) {
-                showToast("攝像頭啟動失敗");
-                console.error(e);
-            }
+                faceLandmarker = await FaceLandmarker.createFromOptions(vision, { baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`, delegate: "GPU" }, runningMode: "VIDEO", numFaces: 1 });
+                isGyroEnabled = false; loopTracking(); showToast("攝像頭追蹤開啟");
+            } catch(e) { showToast("攝像頭啟動失敗"); }
         };
 
         async function loopTracking() {
@@ -514,7 +351,6 @@
                 const results = faceLandmarker.detectForVideo(video, performance.now());
                 if(results.faceLandmarks.length > 0) {
                     const nose = results.faceLandmarks[0][1];
-                    // 臉往左(x變小) -> 相機往左(x變負)
                     state.camX += ((nose.x - 0.5) * -4.0 - state.camX) * 0.1;
                     state.camY += ((nose.y - 0.5) * -2.0 - state.camY) * 0.1;
                 }
@@ -522,88 +358,48 @@
             requestAnimationFrame(loopTracking);
         }
 
-        // B. 陀螺儀追蹤 (Gyro) - 手機神器
         window.enableGyro = () => {
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                // iOS 13+ 需要權限
-                DeviceOrientationEvent.requestPermission().then(response => {
-                    if (response === 'granted') {
-                        startGyro();
-                    } else {
-                        showToast("權限被拒絕");
-                    }
-                }).catch(console.error);
-            } else {
-                // Android 或 舊 iOS 直接啟動
-                startGyro();
-            }
+                DeviceOrientationEvent.requestPermission().then(response => { if (response === 'granted') startGyro(); else showToast("權限被拒絕"); }).catch(console.error);
+            } else { startGyro(); }
         };
 
         function startGyro() {
-            isGyroEnabled = true;
-            faceLandmarker = null; // 關閉攝像頭運算
-            document.getElementById('webcam-wrapper').classList.remove('active');
-            
+            isGyroEnabled = true; faceLandmarker = null; document.getElementById('webcam-wrapper').classList.remove('active');
             window.addEventListener('deviceorientation', (event) => {
-                // gamma: 左右傾斜 (-90 ~ 90) -> X軸移動
-                // beta: 前後傾斜 (-180 ~ 180) -> Y軸移動
-                let x = event.gamma || 0; 
-                let y = event.beta || 0;
-                
-                // 限制範圍並平滑化
-                x = Math.max(-45, Math.min(45, x));
-                y = Math.max(-45, Math.min(45, y - 45)); // 預設手機拿45度角
-
-                state.camX = x * 0.05; 
-                state.camY = y * 0.05; 
+                let x = event.gamma || 0; let y = event.beta || 0;
+                x = Math.max(-45, Math.min(45, x)); y = Math.max(-45, Math.min(45, y - 45));
+                state.camX = x * 0.05; state.camY = y * 0.05; 
             });
             showToast("陀螺儀模式開啟");
         }
 
-        // --- 6. 啟動與渲染 ---
         document.getElementById('btn-start').onclick = () => {
             document.getElementById('setup-overlay').style.opacity = 0;
             setTimeout(() => document.getElementById('setup-overlay').style.display = 'none', 500);
-            
-            initThree();
-            loadVRM(modelUrl);
-            
-            // 嘗試自動請求 Gyro (如果不是 iOS)
-            if (!DeviceOrientationEvent.requestPermission) {
-                enableGyro();
-            }
+            initThree(); loadVRM(modelUrl);
+            if (!DeviceOrientationEvent.requestPermission) enableGyro(); // Android 自動嘗試
         };
 
         const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
-
-            if(currentVrm) currentVrm.update(delta);
+            if(currentVrm) { currentVrm.update(delta); currentVrm.lookAt.target = camera; }
             if(mixer) mixer.update(delta);
-
-            // 更新相機視差 (Parallax)
-            // 無論數據來源是 Webcam 還是 Gyro，最終都寫入 state.camX/Y
+            
             camera.position.x = state.camX;
             camera.position.y = 0.5 + state.camY;
             camera.lookAt(0, 0.5, 0);
-            
-            // VRM 眼神看鏡頭
-            if(currentVrm) currentVrm.lookAt.target = camera;
-
             renderer.render(scene, camera);
         }
 
-        // 視窗大小調整
         window.addEventListener('resize', () => {
             const canvas = document.getElementById('hologram-canvas');
-            const w = canvas.clientWidth;
-            const h = canvas.clientHeight;
-            renderer.setSize(w, h);
-            camera.aspect = w / h;
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            camera.aspect = canvas.clientWidth / canvas.clientHeight;
             camera.updateProjectionMatrix();
         });
-
     </script>
 </body>
 </html>
