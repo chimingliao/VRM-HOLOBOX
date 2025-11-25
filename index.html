@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Holobox - Animation Perfect</title>
+    <style>
+        body {
+            background-color: #050505;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0; font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 80%);
+            perspective: 2000px;
+        }
+
+        :root {
+            --screen-h: 75vh;
+            --screen-ratio: 0.5625;
+            --case-depth: 300px;
+        }
+
+        /* UI Base */
+        #error-log { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(220, 20, 60, 0.9); padding: 12px 24px; border-radius: 8px; display: none; z-index: 999; font-size: 14px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        
+        #setup-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 10, 0.95); z-index: 200; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; backdrop-filter: blur(5px); }
+        .setup-box { background: #1a1a1a; padding: 40px; border-radius: 16px; border: 1px solid #333; text-align: center; width: 320px; }
+        .btn { display: block; width: 100%; padding: 12px; margin-top: 15px; background: #333; color: white; border: 1px solid #555; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .btn:hover { border-color: #ffaa00; color: #ffaa00; }
+        .btn-primary { background: #ffaa00; color: black; border: none; font-weight: bold; margin-top: 30px; }
+        .btn-primary:disabled { background: #444; color: #888; cursor: wait; }
+
+        /* Sidebar UI */
+        .right-sidebar {
+            position: absolute; right: 120px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; align-items: flex-end; gap: 15px; z-index: 100; pointer-events: none;
+        }
+
+        #webcam-container {
+            position: relative; width: 160px; height: 120px; border-radius: 8px; overflow: hidden; border: 2px solid #333; 
+            display: none; transform: scaleX(-1); background: #000; pointer-events: auto; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+        #webcam-container.tracking { border-color: #ffaa00; box-shadow: 0 0 15px #ffaa00; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        #controls-panel {
+            position: relative; width: 280px; background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(10px);
+            padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); display: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5); max-height: 80vh; overflow-y: auto; pointer-events: auto;
+        }
+
+        h3 { margin: 15px 0 8px 0; color: #ffaa00; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid rgba(255, 170, 0, 0.3); padding-bottom: 5px; }
+        h3:first-child { margin-top: 0; }
+        .control-group { margin-bottom: 10px; }
+        .control-label { display: flex; justify-content: space-between; font-size: 12px; color: #ccc; margin-bottom: 4px; }
+        input[type=range] { width: 100%; cursor: pointer; accent-color: #ffaa00; }
+        .toggle-btn { background: rgba(255, 170, 0, 0.15); border: 1px solid #ffaa00; color: #ffaa00; margin-top: 0; margin-bottom: 15px;}
+
+        /* Animation List */
+        #anim-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
+        .anim-btn {
+            background: #222; border: 1px solid #444; color: #ddd; padding: 8px; font-size: 12px; cursor: pointer; text-align: left; border-radius: 4px; transition: 0.2s; display: flex; align-items: center;
+        }
+        .anim-btn:hover { background: #333; border-color: #666; }
+        .anim-btn.active { background: #ffaa00; color: #000; border-color: #ffaa00; font-weight: bold; }
+        .anim-icon { margin-right: 8px; font-size: 10px; }
+
+        /* 3D Machine Body */
+        .machine-assembly { position: relative; transform-style: preserve-3d; transform: rotateY(0deg) rotateX(10deg); transform-origin: center center calc(var(--case-depth) / -2); transition: transform 0.1s linear; }
+        .face-front { width: calc(var(--screen-h) * var(--screen-ratio) + 40px); background: linear-gradient(145deg, #ffffff, #e0e0e0); border-radius: 12px; padding: 20px; padding-top: 40px; padding-bottom: 40px; box-shadow: inset 2px 2px 5px rgba(255,255,255,1); position: relative; display: flex; flex-direction: column; align-items: center; backface-visibility: hidden; }
+        .face-side { position: absolute; background: #111; border: 1px solid #222; background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjMTExIi8+CjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMyMjIiLz4KPC9zdmc+'); }
+        .side-right { width: var(--case-depth); height: 100%; top: 0; right: 0; transform-origin: right center; transform: rotateY(-90deg); }
+        .side-left { width: var(--case-depth); height: 100%; top: 0; left: 0; transform-origin: left center; transform: rotateY(90deg); }
+        .side-top { width: 100%; height: var(--case-depth); top: 0; left: 0; transform-origin: top center; transform: rotateX(-90deg); background: #1a1a1a; }
+        .side-bottom { width: 100%; height: var(--case-depth); bottom: 0; left: 0; transform-origin: bottom center; transform: rotateX(90deg); box-shadow: 0 0 80px rgba(0,0,0,0.8); }
+        .side-back { width: 100%; height: 100%; top: 0; left: 0; transform: translateZ(calc(var(--case-depth) * -1)) rotateY(180deg); background: #0d0d0d; border: 1px solid #333; backface-visibility: hidden; display: flex; justify-content: center; align-items: center; }
+        .vent-holes { width: 80%; height: 60%; background-image: radial-gradient(#333 2px, transparent 2px); background-size: 10px 10px; }
+        .sensor-array { position: absolute; top: 15px; width: 100%; text-align: center; }
+        .camera-dot { width: 8px; height: 8px; background: #111; border-radius: 50%; display: inline-block; box-shadow: inset 0 0 2px rgba(255,255,255,0.5); }
+        .sensor-dot { width: 4px; height: 4px; background: #333; border-radius: 50%; display: inline-block; margin: 0 5px; }
+        .screen-bezel { width: 100%; height: var(--screen-h); background: #000; border-radius: 4px; padding: 5px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); position: relative; z-index: 10; }
+        .holobox-screen { width: 100%; height: 100%; background: #000; position: relative; overflow: hidden; border-radius: 2px; }
+        .speaker-grill { position: absolute; bottom: 12px; width: 60%; height: 16px; background-image: radial-gradient(#999 1px, transparent 1px); background-size: 3px 3px; opacity: 0.5; }
+        .glass-glare { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.05) 45%, rgba(255,255,255,0.0) 50%); pointer-events: none; z-index: 20; }
+        #hologram-canvas { width: 100%; height: 100%; display: block; }
+        #loading-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #ffaa00; font-size: 14px; display: none; z-index: 30; font-weight: bold; }
+    </style>
+
+    <!-- 使用 esm.sh 以確保模組版本依賴正確 -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://esm.sh/three@0.169.0",
+            "three/addons/": "https://esm.sh/three@0.169.0/examples/jsm/",
+            "@pixiv/three-vrm": "https://esm.sh/@pixiv/three-vrm@3.0.0?deps=three@0.169.0",
+            "@pixiv/three-vrm-animation": "https://esm.sh/@pixiv/three-vrm-animation@3.0.0?deps=three@0.169.0,@pixiv/three-vrm@3.0.0",
+            "@mediapipe/tasks-vision": "https://esm.sh/@mediapipe/tasks-vision@0.10.3"
+        }
+    }
+    </script>
+</head>
+<body>
+
+    <div id="error-log"></div>
+
+    <div id="setup-overlay">
+        <div class="setup-box">
+            <h1 style="color:#ffaa00; margin:0 0 20px 0;">HOLOBOX V4.4</h1>
+            <input type="file" id="vrm-upload" accept=".vrm" style="display:none">
+            <button class="btn" onclick="document.getElementById('vrm-upload').click()">📂 選擇 VRM 模型</button>
+            <div id="file-status" style="margin-top: 8px; font-size: 12px; color: #ffaa00; min-height: 18px;"></div>
+            <button id="launch-btn" class="btn btn-primary" disabled>初始化 AI 中...</button>
+        </div>
+    </div>
+
+    <div class="right-sidebar">
+        <div id="webcam-container">
+            <video id="webcam-video" autoplay playsinline muted></video>
+        </div>
+
+        <div id="controls-panel">
+            <button class="btn toggle-btn" onclick="toggleWebcam()">📷 顯示/隱藏 攝像頭</button>
+            
+            <h3>Motion Control (VRMA)</h3>
+            <input type="file" id="vrma-upload" accept=".vrma" style="display:none">
+            <button class="btn" style="margin-top:0; margin-bottom:10px; background:#444;" onclick="document.getElementById('vrma-upload').click()">
+                ➕ 加載動作文件 (.vrma)
+            </button>
+            
+            <div id="anim-list"></div>
+            
+            <button class="btn" style="padding:5px; font-size:12px; background:rgba(255,100,100,0.2); color:#ffaaaa; border-color:rgba(255,100,100,0.5);" onclick="stopAnimation()">
+                ■ 停止動作 (Reset Pose)
+            </button>
+
+            <h3 style="margin-top:20px;">Rotation</h3>
+            <div class="control-group"><div class="control-label"><span>Y (L/R)</span><span id="val-rotY">0</span></div><input type="range" id="inp-rotY" min="-90" max="90" step="1" value="0"></div>
+            <div class="control-group"><div class="control-label"><span>X (U/D)</span><span id="val-rotX">10</span></div><input type="range" id="inp-rotX" min="-45" max="45" step="1" value="10"></div>
+            
+            <h3>Parallax Limit</h3>
+            <div class="control-group"><div class="control-label"><span>Max Shift</span><span id="val-lim">2.5</span></div><input type="range" id="inp-lim" min="0.5" max="5.0" step="0.1" value="2.5"></div>
+
+            <h3>Stage Settings</h3>
+            <div class="control-group"><div class="control-label"><span>Width</span><span id="val-sw">3.5</span></div><input type="range" id="inp-sw" min="2.0" max="6.0" step="0.1" value="3.5"></div>
+            <div class="control-group"><div class="control-label"><span>Depth</span><span id="val-sd">3.0</span></div><input type="range" id="inp-sd" min="1.0" max="6.0" step="0.1" value="3.0"></div>
+            <div class="control-group"><div class="control-label"><span>Light</span><span id="val-li">1.5</span></div><input type="range" id="inp-li" min="0.5" max="3.0" step="0.1" value="1.5"></div>
+
+            <h3>Model</h3>
+            <div class="control-group"><div class="control-label"><span>Pos Y</span><span id="val-y">-1.2</span></div><input type="range" id="inp-y" min="-2" max="2" step="0.05" value="-1.2"></div>
+            <div class="control-group"><div class="control-label"><span>Scale</span><span id="val-s">1.0</span></div><input type="range" id="inp-s" min="0.5" max="2.0" step="0.05" value="1.0"></div>
+            
+            <button class="btn" style="background:rgba(255,255,255,0.1); border:none; padding:8px; font-size:12px;" onclick="resetAll()">↺ 重置設定</button>
+        </div>
+    </div>
+
+    <div class="machine-assembly" id="machine-body">
+        <div class="face-front">
+            <div class="sensor-array"><span class="sensor-dot"></span><span class="camera-dot"></span><span class="sensor-dot"></span></div>
+            <div class="screen-bezel">
+                <div class="holobox-screen">
+                    <div class="glass-glare"></div>
+                    <div id="loading-indicator">BUILDING SPACE...</div>
+                    <canvas id="hologram-canvas"></canvas>
+                </div>
+            </div>
+            <div class="speaker-grill"></div>
+        </div>
+        <div class="face-side side-right"></div>
+        <div class="face-side side-left"></div>
+        <div class="face-side side-top"></div>
+        <div class="face-side side-bottom"></div>
+        <div class="face-side side-back"><div class="vent-holes"></div></div>
+    </div>
+    
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+        import { createVRMAnimationClip, VRMAnimationLoaderPlugin } from '@pixiv/three-vrm-animation';
+        import { FilesetResolver, FaceLandmarker } from '@mediapipe/tasks-vision';
+
+        // --- Config ---
+        let modelUrl = 'https://pixiv.github.io/three-vrm/packages/three-vrm/examples/models/three-vrm-girl.vrm';
+        let scene, camera, renderer, currentVrm;
+        let mixer, currentAction;
+        let faceLandmarker, video, lastVideoTime = -1;
+        let setupComplete = false;
+        
+        let roomMesh, roomEdges, gridHelper, mainLight, innerFrameGroup;
+        const defaultTransform = { x: 0, y: -1.2, scale: 1.0, rot: 180 };
+        const defaultStage = { width: 3.5, depth: 3.0, height: 4.0, brightness: 1.5, limit: 2.5 };
+        let transform = { ...defaultTransform };
+        let stage = { ...defaultStage };
+        let boxRotationY = 0, boxRotationX = 10;
+
+        function logError(msg) { const el = document.getElementById('error-log'); el.style.display = 'block'; el.innerText = msg; console.error(msg); }
+
+        function initScene() {
+            const canvas = document.getElementById('hologram-canvas');
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            resizeRenderer();
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x111111);
+
+            camera = new THREE.PerspectiveCamera(45.0, canvas.clientWidth / canvas.clientHeight, 0.1, 20.0);
+            camera.position.set(0.0, 0.5, 4.5); 
+
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
+            hemiLight.position.set(0, 20, 0);
+            scene.add(hemiLight);
+
+            mainLight = new THREE.DirectionalLight(0xffffff, stage.brightness);
+            mainLight.position.set(2, 5, 5);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 1024;
+            mainLight.shadow.mapSize.height = 1024;
+            scene.add(mainLight);
+
+            const backLight = new THREE.DirectionalLight(0x00aaff, 0.8);
+            backLight.position.set(-2, 2, -3);
+            scene.add(backLight);
+
+            createStageObjects();
+        }
+
+        function createStageObjects() {
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshStandardMaterial({ color: 0x333333, side: THREE.BackSide, roughness: 0.7 });
+            roomMesh = new THREE.Mesh(geometry, material);
+            roomMesh.position.y = 0.8;
+            roomMesh.receiveShadow = true;
+            scene.add(roomMesh);
+
+            const edges = new THREE.EdgesGeometry(geometry);
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffaa00, linewidth: 2 });
+            roomEdges = new THREE.LineSegments(edges, lineMaterial);
+            roomEdges.position.copy(roomMesh.position);
+            scene.add(roomEdges);
+
+            gridHelper = new THREE.GridHelper(1, 10, 0x666666, 0x222222);
+            scene.add(gridHelper);
+
+            innerFrameGroup = new THREE.Group();
+            const frameMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const topBar = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), frameMat);
+            const bottomBar = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), frameMat);
+            const leftBar = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 1), frameMat);
+            const rightBar = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 1), frameMat);
+            topBar.name = "top"; bottomBar.name = "bottom"; leftBar.name = "left"; rightBar.name = "right";
+            innerFrameGroup.add(topBar, bottomBar, leftBar, rightBar);
+            innerFrameGroup.position.y = 0.8;
+            scene.add(innerFrameGroup);
+
+            updateStage();
+        }
+
+        function updateStage() {
+            if(!roomMesh) return;
+            roomMesh.scale.set(stage.width, stage.height, stage.depth);
+            roomEdges.scale.set(stage.width, stage.height, stage.depth);
+            const floorY = roomMesh.position.y - (stage.height / 2);
+            scene.remove(gridHelper);
+            gridHelper = new THREE.GridHelper(stage.width, 10, 0x666666, 0x222222);
+            gridHelper.position.y = floorY + 0.01;
+            gridHelper.position.z = 0;
+            scene.add(gridHelper);
+            const frontZ = (stage.depth / 2); const barSize = 2.0;
+            innerFrameGroup.children.forEach(mesh => {
+                if(mesh.name === "top") { mesh.scale.set(stage.width + barSize*2, 1, 1); mesh.position.set(0, stage.height/2 + barSize/2, frontZ); }
+                if(mesh.name === "bottom") { mesh.scale.set(stage.width + barSize*2, 1, 1); mesh.position.set(0, -stage.height/2 - barSize/2, frontZ); }
+                if(mesh.name === "left") { mesh.scale.set(1, stage.height + barSize*2, 1); mesh.position.set(-stage.width/2 - barSize/2, 0, frontZ); }
+                if(mesh.name === "right") { mesh.scale.set(1, stage.height + barSize*2, 1); mesh.position.set(stage.width/2 + barSize/2, 0, frontZ); }
+            });
+            if(mainLight) mainLight.intensity = stage.brightness;
+        }
+
+        function clamp(val, min, max) { return Math.min(Math.max(val, min), max); }
+
+        const inputs = { rotY: document.getElementById('inp-rotY'), rotX: document.getElementById('inp-rotX'), sw: document.getElementById('inp-sw'), sd: document.getElementById('inp-sd'), li: document.getElementById('inp-li'), lim: document.getElementById('inp-lim'), y: document.getElementById('inp-y'), s: document.getElementById('inp-s') };
+        const displays = { rotY: document.getElementById('val-rotY'), rotX: document.getElementById('val-rotX'), sw: document.getElementById('val-sw'), sd: document.getElementById('val-sd'), li: document.getElementById('val-li'), lim: document.getElementById('val-lim'), y: document.getElementById('val-y'), s: document.getElementById('val-s') };
+
+        function updateFromUI() {
+            boxRotationY = parseInt(inputs.rotY.value);
+            boxRotationX = parseInt(inputs.rotX.value);
+            stage.width = parseFloat(inputs.sw.value); stage.depth = parseFloat(inputs.sd.value); stage.brightness = parseFloat(inputs.li.value); stage.limit = parseFloat(inputs.lim.value);
+            transform.y = parseFloat(inputs.y.value); transform.scale = parseFloat(inputs.s.value);
+            for (let key in displays) { displays[key].innerText = inputs[key].value; }
+            document.getElementById('machine-body').style.transform = `rotateY(${boxRotationY}deg) rotateX(${boxRotationX}deg)`;
+            updateStage(); applyTransform();
+        }
+        Object.values(inputs).forEach(inp => inp.addEventListener('input', updateFromUI));
+        
+        window.resetAll = () => { 
+            transform = { ...defaultTransform }; stage = { ...defaultStage }; 
+            boxRotationY = 0; boxRotationX = 10;
+            inputs.rotY.value = boxRotationY; inputs.rotX.value = boxRotationX;
+            inputs.sw.value = stage.width; inputs.sd.value = stage.depth; inputs.li.value = stage.brightness; inputs.lim.value = stage.limit;
+            inputs.y.value = transform.y; inputs.s.value = transform.scale;
+            updateFromUI(); 
+        };
+        
+        function resizeRenderer() {
+            const canvas = document.getElementById('hologram-canvas');
+            const width = canvas.parentElement.clientWidth;
+            const height = canvas.parentElement.clientHeight;
+            if (renderer) renderer.setSize(width, height);
+            if (camera) { camera.aspect = width / height; camera.updateProjectionMatrix(); }
+        }
+
+        function loadVRM(url) {
+            document.getElementById('loading-indicator').style.display = 'block';
+            if (currentVrm) { scene.remove(currentVrm.scene); VRMUtils.deepDispose(currentVrm.scene); }
+            if(mixer) { mixer.stopAllAction(); mixer = null; }
+            const loader = new GLTFLoader();
+            loader.register((parser) => new VRMLoaderPlugin(parser));
+            loader.load(url, (gltf) => {
+                const vrm = gltf.userData.vrm;
+                VRMUtils.rotateVRM0(vrm);
+                currentVrm = vrm;
+                vrm.scene.traverse((obj) => { if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; } });
+                scene.add(vrm.scene);
+                mixer = new THREE.AnimationMixer(currentVrm.scene);
+                if (vrm.humanoid) {
+                    const lArm = vrm.humanoid.getNormalizedBoneNode('leftUpperArm');
+                    const rArm = vrm.humanoid.getNormalizedBoneNode('rightUpperArm');
+                    if(lArm) lArm.rotation.z = Math.PI / 2.5;
+                    if(rArm) rArm.rotation.z = -Math.PI / 2.5;
+                }
+                applyTransform();
+                document.getElementById('loading-indicator').style.display = 'none';
+            }, undefined, (e) => logError(e.message));
+        }
+
+        // --- Animation Loading Logic (Fixed) ---
+        document.getElementById('vrma-upload').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(file) { loadVRMAnimation(URL.createObjectURL(file), file.name); }
+        });
+
+        function loadVRMAnimation(url, filename) {
+            if(!currentVrm) { alert("請先載入 VRM 模型！"); return; }
+            
+            const loader = new GLTFLoader();
+            // 註冊 Animation Plugin (負責解析 .vrma)
+            loader.register((parser) => new VRMAnimationLoaderPlugin(parser));
+            
+            loader.load(url, (gltf) => {
+                // 從 gltf.userData 獲取 VRMAnimation 物件
+                const vrmAnimations = gltf.userData.vrmAnimations;
+                if (vrmAnimations && vrmAnimations.length > 0) {
+                    const vrmAnimation = vrmAnimations[0];
+                    
+                    // 關鍵修正： createVRMAnimationClip 第二個參數必須是 "currentVrm" (VRM Instance)
+                    // 舊版是傳 currentVrm.humanoid，這是導致 'metaVersion' 錯誤的主因
+                    const vrmClip = createVRMAnimationClip(vrmAnimation, currentVrm);
+                    
+                    addAnimButton(filename, vrmClip);
+                } else {
+                    logError("檔案中未發現 VRM 動畫數據");
+                }
+            }, undefined, (e) => logError("動畫載入失敗: " + e.message));
+        }
+
+        function addAnimButton(name, clip) {
+            const list = document.getElementById('anim-list');
+            const btn = document.createElement('div');
+            btn.className = 'anim-btn';
+            btn.innerHTML = `<span class="anim-icon">▶</span> ${name}`;
+            btn.onclick = () => {
+                document.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                playAnimation(clip);
+            };
+            list.appendChild(btn);
+            btn.click();
+        }
+
+        function playAnimation(clip) {
+            if(currentAction) currentAction.stop();
+            if(mixer) {
+                currentAction = mixer.clipAction(clip);
+                currentAction.play();
+            }
+        }
+
+        window.stopAnimation = () => {
+            if(currentAction) currentAction.stop();
+            document.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
+            if (currentVrm && currentVrm.humanoid) {
+                // A-Pose
+                const lArm = currentVrm.humanoid.getNormalizedBoneNode('leftUpperArm');
+                const rArm = currentVrm.humanoid.getNormalizedBoneNode('rightUpperArm');
+                if(lArm) lArm.rotation.z = Math.PI / 2.5;
+                if(rArm) rArm.rotation.z = -Math.PI / 2.5;
+            }
+        };
+
+        function applyTransform() {
+            if (!currentVrm) return;
+            currentVrm.scene.position.set(transform.x, transform.y, 0);
+            currentVrm.scene.scale.set(transform.scale, transform.scale, transform.scale);
+            currentVrm.scene.rotation.y = transform.rot * (Math.PI / 180);
+        }
+
+        window.toggleWebcam = () => { const cam = document.getElementById('webcam-container'); cam.style.display = cam.style.display === 'none' ? 'block' : 'none'; };
+
+        async function initAI() {
+            try {
+                video = document.getElementById('webcam-video');
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                await new Promise(r => video.onloadeddata = r);
+                const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
+                faceLandmarker = await FaceLandmarker.createFromOptions(vision, { baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`, delegate: "GPU" }, runningMode: "VIDEO", numFaces: 1 });
+                document.getElementById('launch-btn').innerText = "啟動系統"; document.getElementById('launch-btn').disabled = false; setupComplete = true;
+            } catch (e) { logError(e.message); }
+        }
+
+        let smoothedX = 0, smoothedY = 0;
+        async function trackLoop() {
+            if (faceLandmarker && video.currentTime !== lastVideoTime) {
+                lastVideoTime = video.currentTime;
+                const results = faceLandmarker.detectForVideo(video, performance.now());
+                const camContainer = document.getElementById('webcam-container');
+                if (results.faceLandmarks.length > 0) {
+                    camContainer.classList.add('tracking');
+                    const nose = results.faceLandmarks[0][1];
+                    const targetX = (nose.x - 0.5) * 2; const targetY = (nose.y - 0.5) * 2;
+                    smoothedX += (targetX - smoothedX) * 0.1; smoothedY += (targetY - smoothedY) * 0.1;
+                    const limitedX = clamp(-smoothedX * 6.0, -stage.limit, stage.limit);
+                    const limitedY = clamp(0.5 - (smoothedY * 3.0), 0.5 - stage.limit, 0.5 + stage.limit);
+                    camera.position.x = limitedX; camera.position.y = limitedY; camera.lookAt(0, 0.5, 0);
+                    if (currentVrm) currentVrm.lookAt.target = camera;
+                } else { camContainer.classList.remove('tracking'); }
+            }
+            requestAnimationFrame(trackLoop);
+        }
+
+        document.getElementById('launch-btn').onclick = () => {
+            if(!setupComplete) return;
+            const overlay = document.getElementById('setup-overlay'); overlay.style.opacity = 0;
+            setTimeout(() => { overlay.style.display = 'none'; document.getElementById('controls-panel').style.display = 'block'; document.getElementById('webcam-container').style.display = 'block'; }, 500);
+            loadVRM(modelUrl); animate(); trackLoop();
+        };
+        document.getElementById('vrm-upload').onchange = (e) => { const file = e.target.files[0]; if(file) { modelUrl = URL.createObjectURL(file); document.getElementById('file-status').innerText = file.name; }};
+
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            if (currentVrm) currentVrm.update(delta);
+            if (mixer) mixer.update(delta);
+            renderer.render(scene, camera);
+        }
+
+        initScene(); initAI();
+        window.addEventListener('resize', resizeRenderer);
+
+    </script>
+</body>
+</html>
